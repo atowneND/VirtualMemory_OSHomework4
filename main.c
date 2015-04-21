@@ -15,11 +15,9 @@ how to use the page table and disk interfaces.
 #include <string.h>
 #include <errno.h>
 
-char *page_replacement = "fifo";
-
 void page_fault_handler( struct page_table *pt, int page )
 {
-    int frame,nframes,npages;
+    int frame,nframes,npages,bits;
     nframes = page_table_get_nframes(pt);
     npages = page_table_get_npages(pt);
     if (nframes>=npages){
@@ -30,8 +28,16 @@ void page_fault_handler( struct page_table *pt, int page )
 	    printf("page fault on page #%d\n",page);
 	    frame = page % nframes;
     }
-    page_table_set_entry(pt,page,frame,PROT_READ|PROT_WRITE);
-//    page_table_print_entry(pt,page);
+    if (bits!=1){
+        page_table_set_entry(pt,page,frame,PROT_READ);
+    }
+    else if(bits!=2){
+        page_table_set_entry(pt,page,frame,PROT_WRITE);
+    }
+    int retframe;
+    page_table_get_entry(pt,page,&retframe,&bits);
+    printf("frame=%i\tbits=%i\n",retframe,bits);
+    
 //	exit(1);
 }
 
@@ -45,12 +51,8 @@ int main( int argc, char *argv[] )
 
 	int npages = atoi(argv[1]);
 	int nframes = atoi(argv[2]);
-	char *page_replacement = argv[3];
-    strcpy(page_replacement,argv[3]);
-	//printf("main: pr = %s\n",page_replacement);
     const char *program = argv[4];
 
-    printf("page replacement = %s\n",page_replacement);
     // create new virtual disk with pointer to the disk object
 	struct disk *disk = disk_open("myvirtualdisk",npages);
 	if(!disk) {

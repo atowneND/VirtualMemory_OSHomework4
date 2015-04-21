@@ -15,11 +15,30 @@ how to use the page table and disk interfaces.
 #include <string.h>
 #include <errno.h>
 
+struct frame_table {
+    int nframes;
+    int *frame; 
+    int *status;
+};
+
 int page_rep_choice;
 
 void page_fault_handler( struct page_table *pt, int page )
 {
-    printf("page_rep_choice=%i\n",page_rep_choice);
+    // frame table
+    static struct frame_table frame_status;
+    // first time through the function, initialize frame table
+    // assumes that memory is empty to start
+    if (frame_status.frame==NULL){
+        frame_status.nframes = page_table_get_nframes(pt);
+        frame_status.frame = malloc(sizeof(int)*frame_status.nframes);
+        frame_status.status = malloc(sizeof(frame_status.frame));
+        int i;
+        for (i=0;i<frame_status.nframes;i++){
+            frame_status.status[i] = 0;
+        }
+    }
+
     int frame,nframes,npages,retframe,bits;
     // get max number of pages and frames
     nframes = page_table_get_nframes(pt);
@@ -35,7 +54,7 @@ void page_fault_handler( struct page_table *pt, int page )
 	    printf("page fault on page #%d\n",page);
 	    if (page_rep_choice==0){
 	        // RAND
-	        frame = page;
+	        frame = page % nframes;
         }
         else if (page_rep_choice==1){
 	        // FIFO
@@ -43,7 +62,7 @@ void page_fault_handler( struct page_table *pt, int page )
         }
         else if (page_rep_choice==2){
             // CUSTOM
-            frame = page;
+	        frame = page % nframes;
         }
     }
 
@@ -62,7 +81,6 @@ void page_fault_handler( struct page_table *pt, int page )
     }
 
     page_table_get_entry(pt,page,&retframe,&bits);
-    printf("frame=%i\tbits=%i\n",retframe,bits);
     
 //	exit(1);
 }
@@ -74,6 +92,14 @@ int main( int argc, char *argv[] )
 		printf("use: virtmem <npages> <nframes> <rand|fifo|custom> <sort|scan|focus>\n");
 		return 1;
 	}
+	int i;
+	long int foo;
+/*	for(i=0;i<50;i++){
+	    foo = lrand48()%100;
+	printf("foo=%lu\t",foo);
+    }
+	return 1;*/
+
 
 	int npages = atoi(argv[1]);
 	int nframes = atoi(argv[2]);

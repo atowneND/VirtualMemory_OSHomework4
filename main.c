@@ -17,8 +17,9 @@ how to use the page table and disk interfaces.
 
 struct frame_table {
     int nframes;
-    int *frame; 
-    int *status;
+    int *status; // 0 for unused, 1 for used
+    int nfree;
+    int nused;
 };
 
 int page_rep_choice;
@@ -29,14 +30,15 @@ void page_fault_handler( struct page_table *pt, int page )
     static struct frame_table frame_status;
     // first time through the function, initialize frame table
     // assumes that memory is empty to start
-    if (frame_status.frame==NULL){
+    if (frame_status.status==NULL){
         frame_status.nframes = page_table_get_nframes(pt);
-        frame_status.frame = malloc(sizeof(int)*frame_status.nframes);
-        frame_status.status = malloc(sizeof(frame_status.frame));
+        frame_status.status = malloc(sizeof(int)*frame_status.nframes);
         int i;
         for (i=0;i<frame_status.nframes;i++){
             frame_status.status[i] = 0;
         }
+        frame_status.nfree = frame_status.nframes;
+        frame_status.nused = 0;
     }
 
     int frame,nframes,npages,retframe,bits;
@@ -49,12 +51,20 @@ void page_fault_handler( struct page_table *pt, int page )
 	    printf("page fault on page #%d\n",page);
         frame = page;
     }
-    // FIFO
     else if (nframes<npages){
 	    printf("page fault on page #%d\n",page);
 	    if (page_rep_choice==0){
 	        // RAND
-	        frame = page % nframes;
+	        frame = lrand48()%frame_status.nframes; // frame to replace
+	        if (frame_status.nfree != 0){ // if there are free frames, find a random one that is free
+	            while(frame_status.status[frame]==1){
+	                frame = lrand48()%frame_status.nframes;
+                }
+	        }
+	        if (frame_status.status[frame] == 0){
+	            frame_status.nfree = frame_status.nfree - 1;
+	            frame_status.nused = frame_status.nused + 1;
+            }
         }
         else if (page_rep_choice==1){
 	        // FIFO
@@ -66,10 +76,12 @@ void page_fault_handler( struct page_table *pt, int page )
         }
     }
 
+    frame_status.status[frame] = 1;
     // check permissions
     //  - no permissions -> read
     //  - read permissions -> write
     //  - write permissions -> all
+    page_table_get_entry(pt,page,&retframe,&bits);
     if (bits==0){
         page_table_set_entry(pt,page,frame,PROT_READ);
     }
@@ -80,9 +92,6 @@ void page_fault_handler( struct page_table *pt, int page )
         page_table_set_entry(pt,page,frame,PROT_READ|PROT_WRITE|PROT_EXEC);
     }
 
-    page_table_get_entry(pt,page,&retframe,&bits);
-    
-//	exit(1);
 }
 
 int main( int argc, char *argv[] )
@@ -92,14 +101,6 @@ int main( int argc, char *argv[] )
 		printf("use: virtmem <npages> <nframes> <rand|fifo|custom> <sort|scan|focus>\n");
 		return 1;
 	}
-	int i;
-	long int foo;
-/*	for(i=0;i<50;i++){
-	    foo = lrand48()%100;
-	printf("foo=%lu\t",foo);
-    }
-	return 1;*/
-
 
 	int npages = atoi(argv[1]);
 	int nframes = atoi(argv[2]);

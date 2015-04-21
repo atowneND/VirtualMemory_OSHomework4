@@ -17,24 +17,30 @@ how to use the page table and disk interfaces.
 
 void page_fault_handler( struct page_table *pt, int page )
 {
-    int frame,nframes,npages,bits;
+    int frame,nframes,npages,retframe,bits;
+    // get max number of pages and frames
     nframes = page_table_get_nframes(pt);
     npages = page_table_get_npages(pt);
+
+    // check if frame number should be page number
     if (nframes>=npages){
-        frame = page;
 	    printf("page fault on page #%d\n",page);
+        frame = page;
     }
+    // FIFO
     else if (nframes<npages){
 	    printf("page fault on page #%d\n",page);
 	    frame = page % nframes;
     }
+
+    // check permissions
     if (bits!=1){
         page_table_set_entry(pt,page,frame,PROT_READ);
     }
     else if(bits!=2){
         page_table_set_entry(pt,page,frame,PROT_WRITE);
     }
-    int retframe;
+
     page_table_get_entry(pt,page,&retframe,&bits);
     printf("frame=%i\tbits=%i\n",retframe,bits);
     

@@ -1,0 +1,10 @@
+*.a
+*.o*
+disk.c
+disk.h
+page_table.c
+page_table.h
+program.c
+program.h
+virtmem
+myvirtualdisk

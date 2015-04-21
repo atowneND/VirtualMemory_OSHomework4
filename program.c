@@ -8,8 +8,10 @@ Make all of your changes to main.c instead.
 #include <stdio.h>
 #include <stdlib.h>
 
+// compare bytes - basically, strcmp
 static int compare_bytes( const void *pa, const void *pb )
 {
+    // value of the string
 	int a = *(char*)pa;
 	int b = *(char*)pb;
 
@@ -23,6 +25,7 @@ static int compare_bytes( const void *pa, const void *pb )
 
 }
 
+// focus algorithm - randomize data, print the sum
 void focus_program( char *data, int length )
 {
 	int total=0;
@@ -33,7 +36,7 @@ void focus_program( char *data, int length )
 	for(i=0;i<length;i++) {
 		data[i] = 0;
 	}
-
+	
 	for(j=0;j<100;j++) {
 		int start = rand()%length;
 		int size = 25;
@@ -49,6 +52,7 @@ void focus_program( char *data, int length )
 	printf("focus result is %d\n",total);
 }
 
+// sort algorithm - randomize data, print the sum
 void sort_program( char *data, int length )
 {
 	int total = 0;
@@ -70,6 +74,7 @@ void sort_program( char *data, int length )
 
 }
 
+// scan algorithm - randomize data, print the sum
 void scan_program( char *cdata, int length )
 {
 	unsigned i, j;

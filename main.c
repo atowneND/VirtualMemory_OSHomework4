@@ -15,8 +15,11 @@ how to use the page table and disk interfaces.
 #include <string.h>
 #include <errno.h>
 
+int page_rep_choice;
+
 void page_fault_handler( struct page_table *pt, int page )
 {
+    printf("page_rep_choice=%i\n",page_rep_choice);
     int frame,nframes,npages,retframe,bits;
     // get max number of pages and frames
     nframes = page_table_get_nframes(pt);
@@ -30,7 +33,18 @@ void page_fault_handler( struct page_table *pt, int page )
     // FIFO
     else if (nframes<npages){
 	    printf("page fault on page #%d\n",page);
-	    frame = page % nframes;
+	    if (page_rep_choice==0){
+	        // RAND
+	        frame = page;
+        }
+        else if (page_rep_choice==1){
+	        // FIFO
+	        frame = page % nframes;
+        }
+        else if (page_rep_choice==2){
+            // CUSTOM
+            frame = page;
+        }
     }
 
     // check permissions
@@ -57,7 +71,21 @@ int main( int argc, char *argv[] )
 
 	int npages = atoi(argv[1]);
 	int nframes = atoi(argv[2]);
+	char *page_replacement = argv[3];
     const char *program = argv[4];
+    if (!strcmp(page_replacement,"rand")){
+        page_rep_choice = 0;
+    }
+    else if(!strcmp(page_replacement,"fifo")){
+        page_rep_choice = 1;
+    }
+    else if(!strcmp(page_replacement,"custom")){
+        page_rep_choice = 2;
+    }
+    else{
+        printf("Choose rand, fifo, or custum\n");
+        return 1;
+    }
 
     // create new virtual disk with pointer to the disk object
 	struct disk *disk = disk_open("myvirtualdisk",npages);

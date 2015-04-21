@@ -48,11 +48,17 @@ void page_fault_handler( struct page_table *pt, int page )
     }
 
     // check permissions
-    if (bits!=1){
+    //  - no permissions -> read
+    //  - read permissions -> write
+    //  - write permissions -> all
+    if (bits==0){
         page_table_set_entry(pt,page,frame,PROT_READ);
     }
-    else if(bits!=2){
+    else if(bits==1){
         page_table_set_entry(pt,page,frame,PROT_WRITE);
+    }
+    else{
+        page_table_set_entry(pt,page,frame,PROT_READ|PROT_WRITE|PROT_EXEC);
     }
 
     page_table_get_entry(pt,page,&retframe,&bits);

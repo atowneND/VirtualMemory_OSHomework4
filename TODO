@@ -1,0 +1,5 @@
+- [ ] custom page replacement algorithm
+- [ ] page fault count
+- [ ] disk read count
+- [ ] disk write count
+- [ ] check order of programs' memory accesses
